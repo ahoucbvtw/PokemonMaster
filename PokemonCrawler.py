@@ -93,7 +93,7 @@ class Pokemon_Crawler():
                 for s, ability_position in enumerate(text.find_all("td", {"width": "50%"})):  # Distinguish the Normal ability and Hidden ability
                     if s == 0:  # Normal ability
                         if len(ability_position.find_all("a")) > 1:  # Normal ability is more than 1
-                            normal = []  # If more than 1, make List firrst and put into the empty Dictionary
+                            normal = []  # If more than 1, make List first and put into the empty Dictionary
                             for x in ability_position.find_all("a"):
                                 normal.append(self.s2tw(x.text))
 
@@ -104,7 +104,7 @@ class Pokemon_Crawler():
                     else:
                         if self.now_pokemon_number != 718:  # No.718 doesn't have Hidden ability
                             if len(ability_position.find_all("a")) > 1:  # Hidden ability is more than 1
-                                special = []  # If more than 1, make List firrst and put into the empty Dictionary
+                                special = []  # If more than 1, make List first and put into the empty Dictionary
                                 for x in ability_position.find_all("a"):
                                     special.append(self.s2tw(x.text))
 
