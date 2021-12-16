@@ -191,9 +191,9 @@ class Pokemon_Crawler():
         self.now_pokemon_number += 1  # Make the next page url
         time.sleep(random.randint(10, 15))  # Wait random seconds for finished 1 page
 
-        for i in range(self.end_pokemon_number - 1):  # Catch all of the Pokemon's page (No.001 to total_pokemon)
+        for i in range(self.end_pokemon_number - 1):  # Catch all of the Pokemon's page (No.002 to the total_pokemon counts)
             html_text = self.get_html(self.url)
-            self.html_decode(html_text)  # Decode the Html data ((No.001 to total_pokemon)
+            self.html_decode(html_text)  # Decode the Html data (No.002 to the total_pokemon counts)
             self.now_pokemon_number += 1
             if i != (self.end_pokemon_number - 2):  # The last page can pass wait seconds
                 time.sleep(random.randint(10, 15))
