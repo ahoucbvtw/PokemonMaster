@@ -125,7 +125,7 @@ class Pokemon_Crawler():
 
         return status
 
-    def html_decode(self, html):  # Decode the Htnl data
+    def html_decode(self, html):  # Decode the Html data
         soup = BeautifulSoup(html, 'html.parser')
         self.next_url(soup)
         pokemon_number = self.nownumber_2string(self.now_pokemon_number)
