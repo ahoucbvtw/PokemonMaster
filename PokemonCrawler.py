@@ -106,9 +106,9 @@ class Pokemon_Crawler:
 
                             abilities["一般特性"] = normal
 
-                        else:
+                        else:  # Normal ability is = 1
                             abilities["一般特性"] = self.s2tw(ability_position.find("a").text)
-                    else:
+                    else:  # Hidden ability
                         if self.now_pokemon_number != 718:  # No.718 doesn't have Hidden ability
                             if len(ability_position.find_all("a")) > 1:  # Hidden ability is more than 1
                                 special = []  # If more than 1, make List first and put into the empty Dictionary
@@ -117,7 +117,7 @@ class Pokemon_Crawler:
 
                                 abilities["隱藏特性"] = special
 
-                            else:
+                            else:  # Hidden ability is = 1
                                 abilities["隱藏特性"] = self.s2tw(ability_position.find("a").text)
 
         return abilities
@@ -165,21 +165,21 @@ class Pokemon_Crawler:
         print("=" * 150)
 
         first_data = self.html_decode(html_text)  # Decode the Html data (No.001 Bulbasaur's page)
-        self.result = self.data2df(first_data)
+        self.result = self.data2df(first_data)  # first page's data (No.001 Bulbasaur) to DataFrame
         self.now_pokemon_number += 1  # Make the next page url
         time.sleep(random.randint(10, 15))  # Wait random seconds for finished 1 page
 
         for i in range(self.end_pokemon_number - 1):  # Catch all of the Pokemon's page (No.002 to the total_pokemon counts)
             html_text = self.get_html(self.url)
             nonfitst_data = self.html_decode(html_text)  # Decode the Html data (No.002 to the total_pokemon counts)
-            nonfitst_data_df = self.data2df(nonfitst_data)
+            nonfitst_data_df = self.data2df(nonfitst_data)  # data (No.002 to the total_pokemon counts) to DataFrame
             self.result = self.result.append(nonfitst_data_df, ignore_index=True)  # New data's DataFrame bind into old data's DataFrame
             self.now_pokemon_number += 1
             
             if i != (self.end_pokemon_number - 2):  # The last page can pass wait seconds
                 time.sleep(random.randint(10, 15))
 
-        self.result.to_csv("Pokemon.csv", index=False)
+        self.result.to_csv("Pokemon.csv", index=False)  # save the data to csv
 
 
 if __name__ == "__main__":
