@@ -7,14 +7,22 @@ from fake_headers import Headers
 from opencc import OpenCC
 
 
-class Pokemon_Crawler():
+class Pokemon_Crawler:
     def __init__(self):
-        self.result = list()
+        self.result = None
         self.now_pokemon_number = 1  # Default is 1
         self.end_pokemon_number = 0  # Default is 0
+        self.cc = OpenCC('s2tw')  # Change the Simplified Chinese to Traditional Chinese
         self.headers = {}
         self.url = "https://wiki.52poke.com/wiki/%E5%A6%99%E8%9B%99%E7%A7%8D%E5%AD%90" # Default is first page (No.001 Bulbasaur's page)
+        self.index = ['pokemon_number', 'pokemon_name_ch', 'pokemon_name_jp',
+                      'pokemon_name_en', 'pokemon_types', 'pokemon_ability', 'pokemon_status']
+        
+    def data2df(self, pokemon_data):  # data to Series and then to DataFrame
+        series = pd.Series(pokemon_data, index=self.index)
 
+        return pd.DataFrame(series).T    
+    
     def next_url(self, html):  # Make the next page's url
         url_position = html.find("td", {"class": "roundyright-25"}).find("a").get('href')
         self.url = "https://wiki.52poke.com" + url_position
@@ -38,12 +46,10 @@ class Pokemon_Crawler():
         else:
             return str(nownumber)
 
-    def s2tw(self, simplechinese_text):  # Change the Simplified Chinese to Traditional Chinese
-        cc = OpenCC('s2tw')
-        return cc.convert(simplechinese_text)
+    def s2tw(self, simplechinese_text):  # Change the Simplified Chinese to Traditional Chinese        
+        return self.cc.convert(simplechinese_text)
 
     def get_html(self, url):
-
         requests.packages.urllib3.disable_warnings()
         self.headers = self.random_header()
         r = requests.get(url, headers=self.headers, verify=False)
@@ -52,7 +58,7 @@ class Pokemon_Crawler():
 
     def total_pokemons(self, html):  # Catch the total of the Pokemon
         soup = BeautifulSoup(html, 'html.parser')
-        solditem_list = soup.find("table", {"class": "fulltable at-r"}).find_all("td")
+        solditem_list = soup.find("table", {"class": "fulltable at-r"}).find_all("a")
 
         for i in solditem_list:
             if "No." in i.text.strip():
@@ -82,10 +88,11 @@ class Pokemon_Crawler():
         return types
 
     def pokemon_ability(self, html):  # Catch the Pokemon abilities
-        abilitys = {}
-        ability_table = html.find_all("table", {
-            "style": "width: 300px; margin-left: 5px; margin-bottom: 5px;"})  # No.718 Pokemon is different, must use the different ways to catch the data
-        if len(ability_table) == 0:
+        abilities = {}
+        if self.now_pokemon_number == 718:
+            ability_table = html.find_all("table", {
+                "style": "width: 300px; margin-left: 5px; margin-bottom: 5px;"})  # No.718 Pokemon is different, must use the different ways to catch the data
+        else:
             ability_table = html.find_all("table", {"class": "roundy bgwhite fulltable"})  # All Pokemon abilities data are in this Element except No.718
 
         for i, text in enumerate(ability_table):
@@ -97,10 +104,10 @@ class Pokemon_Crawler():
                             for x in ability_position.find_all("a"):
                                 normal.append(self.s2tw(x.text))
 
-                            abilitys["普特"] = normal
+                            abilities["一般特性"] = normal
 
                         else:
-                            abilitys["普特"] = self.s2tw(ability_position.find("a").text)
+                            abilities["一般特性"] = self.s2tw(ability_position.find("a").text)
                     else:
                         if self.now_pokemon_number != 718:  # No.718 doesn't have Hidden ability
                             if len(ability_position.find_all("a")) > 1:  # Hidden ability is more than 1
@@ -108,12 +115,12 @@ class Pokemon_Crawler():
                                 for x in ability_position.find_all("a"):
                                     special.append(self.s2tw(x.text))
 
-                                abilitys["夢特"] = special
+                                abilities["隱藏特性"] = special
 
                             else:
-                                abilitys["夢特"] = self.s2tw(ability_position.find("a").text)
+                                abilities["隱藏特性"] = self.s2tw(ability_position.find("a").text)
 
-        return abilitys
+        return abilities
 
     def pokemon_status(self, html):  # Catch the Pokemon status (HP, Attack, Defence...)
         status = {}
@@ -133,53 +140,23 @@ class Pokemon_Crawler():
         pokemon_types = self.pokemon_type(soup)
 
         try:
-            pokemon_abilitys = self.pokemon_ability(soup)
+            pokemon_abilities = self.pokemon_ability(soup)
         except:
-            pokemon_abilitys = dict()
+            pokemon_abilities = dict()
 
-        pokemon_statuss = self.pokemon_status(soup)
-
-        p = [pokemon_number, pokemon_name_ch, pokemon_name_jp, pokemon_name_en, pokemon_types, pokemon_abilitys,
-             pokemon_statuss]
-        self.result.append(p)
+        pokemon_status_ = self.pokemon_status(soup)
 
         print("pokemon_number : ", pokemon_number)
         print("pokemon_name_ch : ", pokemon_name_ch)
         print("pokemon_name_jp : ", pokemon_name_jp)
         print("pokemon_name_en : ", pokemon_name_en)
         print("pokemon_types : ", pokemon_types)
-        print("pokemon_abilitys : ", pokemon_abilitys)
-        print("pokemon_statuss : ", pokemon_statuss)
+        print("pokemon_abilities : ", pokemon_abilities)
+        print("pokemon_status_ : ", pokemon_status_)
         print("=" * 150)
-
-    def save_data(self):  # Save the data to CSV file
-        pokemon_number = list()
-        pokemon_name_ch = list()
-        pokemon_name_jp = list()
-        pokemon_name_en = list()
-        pokemon_types = list()
-        pokemon_abilitys = list()
-        pokemon_statuss = list()
-
-        for i in self.result:
-            pokemon_number.append(i[0])
-            pokemon_name_ch.append(i[1])
-            pokemon_name_jp.append(i[2])
-            pokemon_name_en.append(i[3])
-            pokemon_types.append(i[4])
-            pokemon_abilitys.append(i[5])
-            pokemon_statuss.append(i[6])
-
-        data = {'pokemon_number': pokemon_number,
-                'pokemon_name_ch': pokemon_name_ch,
-                'pokemon_name_jp': pokemon_name_jp,
-                'pokemon_name_en': pokemon_name_en,
-                'pokemon_types': pokemon_types,
-                'pokemon_abilitys': pokemon_abilitys,
-                'pokemon_status': pokemon_statuss}
-
-        df = pd.DataFrame(data)
-        df.to_csv("Pokemon.csv", index=False)
+        
+        return [pokemon_number, pokemon_name_ch, pokemon_name_jp, pokemon_name_en,
+                pokemon_types, pokemon_abilities, pokemon_status_]
 
     def start_crawler(self):
         html_text = self.get_html(self.url)  # Catch the first page's Html (No.001 Bulbasaur's page)
@@ -187,22 +164,26 @@ class Pokemon_Crawler():
         print("total_pokemon : ", self.end_pokemon_number)
         print("=" * 150)
 
-        self.html_decode(html_text)  # Decode the Html data (No.001 Bulbasaur's page)
+        first_data = self.html_decode(html_text)  # Decode the Html data (No.001 Bulbasaur's page)
+        self.result = self.data2df(first_data)
         self.now_pokemon_number += 1  # Make the next page url
         time.sleep(random.randint(10, 15))  # Wait random seconds for finished 1 page
 
         for i in range(self.end_pokemon_number - 1):  # Catch all of the Pokemon's page (No.002 to the total_pokemon counts)
             html_text = self.get_html(self.url)
-            self.html_decode(html_text)  # Decode the Html data (No.002 to the total_pokemon counts)
+            nonfitst_data = self.html_decode(html_text)  # Decode the Html data (No.002 to the total_pokemon counts)
+            nonfitst_data_df = self.data2df(nonfitst_data)
+            self.result = self.result.append(nonfitst_data_df, ignore_index=True)  # New data's DataFrame bind into old data's DataFrame
             self.now_pokemon_number += 1
+            
             if i != (self.end_pokemon_number - 2):  # The last page can pass wait seconds
                 time.sleep(random.randint(10, 15))
 
-        self.save_data()
+        self.result.to_csv("Pokemon.csv", index=False)
 
 
 if __name__ == "__main__":
     pokemon = Pokemon_Crawler()
     pokemon.start_crawler()
 
-    print("本次爬蟲已經運行完畢！！")
+    print("本次爬蟲已經運行完畢！！")  # Finish
