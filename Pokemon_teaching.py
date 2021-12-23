@@ -166,5 +166,5 @@ for i in range(end_pokemon_number - 1):
     data_df = data_df.append(nonfirst_data_df, ignore_index=True)  # New data's DataFrame bind into old data's DataFrame
     time.sleep(random.randint(10, 15))  # Wait random seconds for finished 1 page
 
-data_df.to_csv("Pokemon1.csv", index=False)  # save the data to csv
+data_df.to_csv("Pokemon.csv", index=False)  # save the data to csv
 print("本次爬蟲已經運行完畢！！")  # Finish
